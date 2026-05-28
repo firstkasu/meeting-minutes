@@ -223,7 +223,25 @@ export default function Home() {
       <h1>🎙️ 회의 녹음 & 정리</h1>
 
       <div className="info">
-        <strong>안내:</strong> &quot;회의 시작&quot;을 누르면 마이크 권한을 요청합니다. 화면 공유 다이얼로그에서 회의 탭(예: Zoom)을 선택하고 <strong>&quot;탭 오디오 공유&quot;</strong>를 체크하면 시스템 오디오도 함께 녹음됩니다. 거부하면 마이크만 녹음됩니다. (최대 5분 권장)
+        <strong>안내:</strong> &quot;회의 시작&quot;을 누르면 마이크 권한을 요청합니다. 화면 공유 다이얼로그에서 회의 탭(예: Zoom)을 선택하고 <strong>&quot;탭 오디오 공유&quot;</strong>를 체크하면 시스템 오디오도 함께 녹음됩니다. 거부하면 마이크만 녹음됩니다.
+      </div>
+
+      <div className="notice">
+        <strong>⚠️ 테스트 버전 안내</strong>
+        <ul>
+          <li>이 버전은 <strong>5분 미만의 회의만</strong> 처리 가능합니다 (서버 제약).</li>
+          <li>가볍게 만들기 위해 <strong>최고 성능의 전사 도구는 사용하지 않았습니다.</strong> 전사 정확도가 다소 떨어질 수 있습니다.</li>
+        </ul>
+      </div>
+
+      <div className="tools">
+        <strong>사용된 기술 스택</strong>
+        <ul>
+          <li><strong>녹음:</strong> 브라우저 MediaRecorder API (WebM Opus 64kbps), Web Audio API (마이크 + 시스템 오디오 믹싱)</li>
+          <li><strong>전사 + 회의록 생성:</strong> Google Gemini 2.5 Flash (음성 → 한국어 텍스트 → 구조화된 회의록을 한 번에 처리)</li>
+          <li><strong>프론트엔드:</strong> Next.js 15 + React 19 + TypeScript</li>
+          <li><strong>배포:</strong> Vercel (Serverless Functions, 60초 timeout)</li>
+        </ul>
       </div>
 
       <div className="buttons">
