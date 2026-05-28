@@ -61,6 +61,10 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<MeetingResult | null>(null);
   const [elapsed, setElapsed] = useState(0);
+  const [micActive, setMicActive] = useState(false);
+  const [systemActive, setSystemActive] = useState(false);
+  const [micLevel, setMicLevel] = useState(0);
+  const [systemLevel, setSystemLevel] = useState(0);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -68,11 +72,18 @@ export default function Home() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const streamsRef = useRef<MediaStream[]>([]);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserMicRef = useRef<AnalyserNode | null>(null);
+  const analyserSysRef = useRef<AnalyserNode | null>(null);
+  const meterRafRef = useRef<number | null>(null);
 
   const cleanup = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
+    }
+    if (meterRafRef.current !== null) {
+      cancelAnimationFrame(meterRafRef.current);
+      meterRafRef.current = null;
     }
     streamsRef.current.forEach(stream => {
       stream.getTracks().forEach(track => track.stop());
@@ -82,7 +93,24 @@ export default function Home() {
       audioContextRef.current.close().catch(() => {});
       audioContextRef.current = null;
     }
+    analyserMicRef.current = null;
+    analyserSysRef.current = null;
+    setMicActive(false);
+    setSystemActive(false);
+    setMicLevel(0);
+    setSystemLevel(0);
   }, []);
+
+  const computeLevel = (analyser: AnalyserNode): number => {
+    const data = new Uint8Array(analyser.fftSize);
+    analyser.getByteTimeDomainData(data);
+    let sum = 0;
+    for (let i = 0; i < data.length; i++) {
+      const v = (data[i] - 128) / 128;
+      sum += v * v;
+    }
+    return Math.min(1, Math.sqrt(sum / data.length) * 3);
+  };
 
   const startRecording = async () => {
     setError(null);
@@ -111,12 +139,38 @@ export default function Home() {
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       const audioContext = new AudioCtx();
       audioContextRef.current = audioContext;
+      if (audioContext.state === "suspended") {
+        await audioContext.resume();
+      }
       const dest = audioContext.createMediaStreamDestination();
 
-      audioContext.createMediaStreamSource(micStream).connect(dest);
+      const micSrc = audioContext.createMediaStreamSource(micStream);
+      const micAnalyser = audioContext.createAnalyser();
+      micAnalyser.fftSize = 512;
+      micSrc.connect(micAnalyser);
+      micSrc.connect(dest);
+      analyserMicRef.current = micAnalyser;
+      setMicActive(true);
+
       if (systemStream) {
-        audioContext.createMediaStreamSource(systemStream).connect(dest);
+        const sysSrc = audioContext.createMediaStreamSource(systemStream);
+        const sysGain = audioContext.createGain();
+        sysGain.gain.value = 1.5;
+        const sysAnalyser = audioContext.createAnalyser();
+        sysAnalyser.fftSize = 512;
+        sysSrc.connect(sysAnalyser);
+        sysSrc.connect(sysGain);
+        sysGain.connect(dest);
+        analyserSysRef.current = sysAnalyser;
+        setSystemActive(true);
       }
+
+      const tickMeter = () => {
+        if (analyserMicRef.current) setMicLevel(computeLevel(analyserMicRef.current));
+        if (analyserSysRef.current) setSystemLevel(computeLevel(analyserSysRef.current));
+        meterRafRef.current = requestAnimationFrame(tickMeter);
+      };
+      meterRafRef.current = requestAnimationFrame(tickMeter);
 
       const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
         ? "audio/webm;codecs=opus"
@@ -223,7 +277,14 @@ export default function Home() {
       <h1>🎙️ 회의 녹음 & 정리</h1>
 
       <div className="info">
-        <strong>안내:</strong> &quot;회의 시작&quot;을 누르면 마이크 권한을 요청합니다. 화면 공유 다이얼로그에서 회의 탭(예: Zoom)을 선택하고 <strong>&quot;탭 오디오 공유&quot;</strong>를 체크하면 시스템 오디오도 함께 녹음됩니다. 거부하면 마이크만 녹음됩니다.
+        <strong>📌 시스템 오디오(스피커 소리) 캡처 방법:</strong>
+        <ol>
+          <li>&quot;회의 시작&quot; → 마이크 권한 허용</li>
+          <li>화면 공유 다이얼로그에서 <strong>&quot;Chrome 탭&quot;</strong> 선택 (전체 화면/창은 시스템 오디오 캡처 불가)</li>
+          <li>회의가 진행되는 탭(Zoom/Meet/YouTube 등) 선택</li>
+          <li>다이얼로그 하단의 <strong>&quot;탭 오디오 공유&quot; 체크박스 반드시 켜기</strong></li>
+        </ol>
+        <small>※ Chrome/Edge에서만 동작. Firefox·Safari는 시스템 오디오 캡처를 지원하지 않습니다.</small>
       </div>
 
       <div className="notice">
@@ -262,9 +323,39 @@ export default function Home() {
       </div>
 
       {recording && (
-        <div className="status recording">
-          🔴 녹음 중... <code>{formatDuration(elapsed)}</code>
-        </div>
+        <>
+          <div className="status recording">
+            🔴 녹음 중... <code>{formatDuration(elapsed)}</code>
+          </div>
+          <div className="meters">
+            <div className="meter-row">
+              <span className="meter-label">
+                마이크 {micActive ? "✅" : "❌"}
+              </span>
+              <div className="meter-bar">
+                <div className="meter-fill" style={{ width: `${micLevel * 100}%` }} />
+              </div>
+            </div>
+            <div className="meter-row">
+              <span className="meter-label">
+                시스템 오디오 {systemActive ? "✅" : "❌"}
+              </span>
+              <div className="meter-bar">
+                <div className="meter-fill" style={{ width: `${systemLevel * 100}%` }} />
+              </div>
+            </div>
+            {!systemActive && (
+              <div className="meter-warn">
+                ⚠️ 시스템 오디오가 캡처되지 않았습니다. 다시 시작 시 화면 공유 다이얼로그에서 <strong>&quot;탭 오디오 공유&quot;</strong> 또는 <strong>&quot;시스템 오디오 공유&quot;</strong> 체크박스를 켜주세요.
+              </div>
+            )}
+            {systemActive && systemLevel < 0.02 && elapsed > 2 && (
+              <div className="meter-warn">
+                ⚠️ 시스템 오디오 트랙은 연결되었지만 소리가 감지되지 않습니다. 공유한 탭에서 실제로 소리가 재생 중인지 확인해주세요.
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {processing && (
