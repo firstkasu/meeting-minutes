@@ -284,8 +284,12 @@ export default function Home() {
 
   return (
     <main className="container">
-      <h1>🎙️ 회의 녹음 & 정리</h1>
+      <header className="hero">
+        <h1>🎙️ AI 회의 녹음 & 정리</h1>
+        <p>버튼 한 번으로 회의를 녹음하고 자동으로 회의록을 만들어 드려요</p>
+      </header>
 
+      <section className="card">
       <div className="info">
         <strong>📌 사용 방법:</strong>
         <ol>
@@ -375,9 +379,11 @@ export default function Home() {
 
       {error && <div className="error">{error}</div>}
 
+      </section>
+
       {result && (
-        <div className="result">
-          <div className="success">✅ 회의록 생성 완료!</div>
+        <section className="result">
+          <div className="success">✅ 회의록 생성 완료</div>
 
           <div
             className="minutes-content"
@@ -395,7 +401,7 @@ export default function Home() {
           <button onClick={downloadMarkdown} className="btn btn-download">
             📥 회의록 다운로드 (.md)
           </button>
-        </div>
+        </section>
       )}
     </main>
   );
