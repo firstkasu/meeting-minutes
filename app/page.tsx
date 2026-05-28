@@ -66,6 +66,7 @@ export default function Home() {
   const [micLevel, setMicLevel] = useState(0);
   const [systemLevel, setSystemLevel] = useState(0);
   const [captureSystemAudio, setCaptureSystemAudio] = useState(true);
+  const [systemStatus, setSystemStatus] = useState<"off" | "ok" | "cancelled" | "no_audio">("off");
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -100,6 +101,7 @@ export default function Home() {
     setSystemActive(false);
     setMicLevel(0);
     setSystemLevel(0);
+    setSystemStatus("off");
   }, []);
 
   const computeLevel = (analyser: AnalyserNode): number => {
@@ -143,9 +145,15 @@ export default function Home() {
           const audioTracks = displayStream.getAudioTracks();
           if (audioTracks.length > 0) {
             systemStream = new MediaStream(audioTracks);
+            setSystemStatus("ok");
+          } else {
+            // 공유는 했지만 시스템 오디오 토글이 꺼져 있어 audio track이 없음
+            setSystemStatus("no_audio");
+            displayStream.getVideoTracks().forEach((t) => t.stop());
           }
         } catch {
-          // 사용자가 화면 공유를 거부/취소함 → 마이크만으로 계속 진행
+          // 사용자가 다이얼로그를 취소함
+          setSystemStatus("cancelled");
         }
       }
 
@@ -393,14 +401,19 @@ export default function Home() {
                 <div className="meter-fill" style={{ width: `${systemLevel * 100}%` }} />
               </div>
             </div>
-            {!systemActive && captureSystemAudio && (
+            {!captureSystemAudio && (
+              <div className="meter-info">
+                ℹ️ 마이크만 녹음 모드입니다.
+              </div>
+            )}
+            {captureSystemAudio && systemStatus === "cancelled" && (
               <div className="meter-info">
                 ℹ️ 화면 공유를 취소하셔서 <strong>마이크만 녹음 중</strong>입니다. 그대로 진행하셔도 됩니다.
               </div>
             )}
-            {!captureSystemAudio && (
-              <div className="meter-info">
-                ℹ️ 마이크만 녹음 모드입니다.
+            {captureSystemAudio && systemStatus === "no_audio" && (
+              <div className="meter-warn">
+                ⚠️ 화면은 공유되었지만 <strong>&quot;시스템 오디오도 공유&quot; 토글이 꺼져 있어</strong> 시스템 오디오가 캡처되지 않았습니다. 종료 후 다시 시작하면서 다이얼로그 하단의 토글을 켜주세요. (지금은 마이크만 녹음 중)
               </div>
             )}
             {systemActive && systemLevel < 0.02 && elapsed > 3 && (
