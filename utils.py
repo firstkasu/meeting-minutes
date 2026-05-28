@@ -1,7 +1,44 @@
 """녹음·믹싱·전사 유틸리티."""
 
+import os
+import sys
+from datetime import datetime
+
 import numpy as np
 from scipy import signal as scipy_signal
+
+MODEL_DIR_NAME = "whisper-medium"
+
+
+def format_duration(seconds: float) -> str:
+    total = int(seconds)
+    if total >= 3600:
+        h, rem = divmod(total, 3600)
+        m, s = divmod(rem, 60)
+        return f"{h:02d}:{m:02d}:{s:02d}"
+    m, s = divmod(total, 60)
+    return f"{m}분 {s}초"
+
+
+def assemble_minutes(body: str, duration_seconds: float, transcript: str) -> str:
+    duration_str = format_duration(duration_seconds)
+    return (
+        f"{body}\n\n"
+        f"## 전체 회의 시간\n- {duration_str}\n\n"
+        f"## 전체 녹음 내용 (상세)\n- {transcript}\n"
+    )
+
+
+def generate_meeting_filename(dt: datetime) -> str:
+    return dt.strftime("meeting_%Y%m%d_%H%M%S.wav")
+
+
+def get_model_path() -> str:
+    if hasattr(sys, "_MEIPASS"):
+        base = sys._MEIPASS
+    else:
+        base = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base, MODEL_DIR_NAME)
 
 
 def _to_mono(audio: np.ndarray) -> np.ndarray:
