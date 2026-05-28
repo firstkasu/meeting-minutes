@@ -338,7 +338,7 @@ export default function Home() {
     <main className="container">
       <header className="hero">
         <h1>🎙️ AI 회의 녹음 & 정리</h1>
-        <p>버튼 한 번으로 회의를 녹음하고 자동으로 회의록을 만들어 드려요</p>
+        <p>버튼 한 번으로 회의를 녹음하고 자동으로 회의록을 만들어 드려요 · 온라인·오프라인 회의 모두 사용 가능</p>
       </header>
 
       <section className="card">
