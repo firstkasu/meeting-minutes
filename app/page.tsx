@@ -124,8 +124,18 @@ export default function Home() {
       let systemStream: MediaStream | null = null;
       try {
         const displayStream = await navigator.mediaDevices.getDisplayMedia({
-          audio: true,
-          video: true,
+          video: {
+            displaySurface: "monitor",
+          } as MediaTrackConstraints,
+          audio: {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+          },
+          // @ts-expect-error - systemAudio is a Chrome-specific option
+          systemAudio: "include",
+          selfBrowserSurface: "include",
+          surfaceSwitching: "exclude",
         });
         streamsRef.current.push(displayStream);
         const audioTracks = displayStream.getAudioTracks();
@@ -277,14 +287,13 @@ export default function Home() {
       <h1>🎙️ 회의 녹음 & 정리</h1>
 
       <div className="info">
-        <strong>📌 시스템 오디오(스피커 소리) 캡처 방법:</strong>
+        <strong>📌 사용 방법:</strong>
         <ol>
-          <li>&quot;회의 시작&quot; → 마이크 권한 허용</li>
-          <li>화면 공유 다이얼로그에서 <strong>&quot;Chrome 탭&quot;</strong> 선택 (전체 화면/창은 시스템 오디오 캡처 불가)</li>
-          <li>회의가 진행되는 탭(Zoom/Meet/YouTube 등) 선택</li>
-          <li>다이얼로그 하단의 <strong>&quot;탭 오디오 공유&quot; 체크박스 반드시 켜기</strong></li>
+          <li>&quot;회의 시작&quot; 클릭 → 마이크 권한 허용</li>
+          <li>화면 공유 다이얼로그가 뜨면 <strong>&quot;전체 화면&quot;</strong>이 자동 선택됨 → <strong>&quot;공유&quot; 클릭</strong> (시스템 오디오 자동 포함)</li>
+          <li>회의 종료 후 &quot;회의 종료&quot; 클릭</li>
         </ol>
-        <small>※ Chrome/Edge에서만 동작. Firefox·Safari는 시스템 오디오 캡처를 지원하지 않습니다.</small>
+        <small>※ 브라우저 보안 정책상 시스템 오디오 캡처에는 화면 공유 다이얼로그 1회 클릭이 필수입니다 (없앨 수 없음). Chrome/Edge 권장.</small>
       </div>
 
       <div className="notice">
