@@ -305,6 +305,13 @@ export default function Home() {
       </header>
 
       <section className="card">
+      <div className="test-link">
+        🎬 테스트용 영상:{" "}
+        <a href="https://www.youtube.com/shorts/gF1x6fjTx2w" target="_blank" rel="noopener noreferrer">
+          YouTube Shorts (gF1x6fjTx2w)
+        </a>
+      </div>
+
       <div className="info">
         <strong>📌 사용 방법:</strong>
         <ol>
@@ -321,12 +328,6 @@ export default function Home() {
         <ul>
           <li>이 버전은 <strong>1분 미만의 회의만</strong> 처리 가능합니다 (서버 제약).</li>
           <li>가볍게 만들기 위해 <strong>최고 성능의 전사 도구는 사용하지 않았습니다.</strong> 전사 정확도가 다소 떨어질 수 있습니다.</li>
-          <li>
-            테스트용 영상:{" "}
-            <a href="https://www.youtube.com/shorts/gF1x6fjTx2w" target="_blank" rel="noopener noreferrer">
-              YouTube Shorts (gF1x6fjTx2w)
-            </a>
-          </li>
         </ul>
       </div>
 

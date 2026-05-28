@@ -64,6 +64,25 @@ body {
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
+.test-link {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border-left: 4px solid var(--success);
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 14px;
+  color: #065f46;
+}
+.test-link a {
+  color: #047857;
+  font-weight: 700;
+  text-decoration: underline;
+}
+.test-link a:hover {
+  color: #065f46;
+}
+
 .info {
   background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
   border-left: 4px solid var(--accent);
