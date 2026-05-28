@@ -3,7 +3,7 @@ scipy
 soundcard
 soundfile
 faster-whisper
-anthropic
+google-genai
 python-dotenv
 streamlit
 streamlit-autorefresh

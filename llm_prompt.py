@@ -1,10 +1,10 @@
-"""Anthropic API 호출 및 프롬프트 관리."""
+"""LLM 호출 및 프롬프트 관리 (현재: Google Gemini)."""
 
 import time
 
-import anthropic
+from google import genai
 
-MODEL = "claude-opus-4-7"
+MODEL = "gemini-2.5-flash"
 MAX_RETRIES = 3
 BASE_DELAY = 1.0
 
@@ -32,22 +32,25 @@ def generate_minutes(
     api_key: str,
     *,
     _clock: object = None,
+    _client_factory=None,
 ) -> str:
     """전사 텍스트로 회의록 본문을 생성. 실패 시 지수 백오프 재시도."""
     sleep_fn = getattr(_clock, "sleep", time.sleep) if _clock else time.sleep
 
-    client = anthropic.Anthropic(api_key=api_key)
-    last_error = None
+    if _client_factory:
+        client = _client_factory(api_key)
+    else:
+        client = genai.Client(api_key=api_key)
 
+    last_error = None
     for attempt in range(MAX_RETRIES):
         try:
-            response = client.messages.create(
+            response = client.models.generate_content(
                 model=MODEL,
-                max_tokens=4096,
-                system=SYSTEM_PROMPT,
-                messages=[{"role": "user", "content": f"다음 회의 전사 내용을 정리해주세요:\n\n{transcript}"}],
+                config={"system_instruction": SYSTEM_PROMPT},
+                contents=f"다음 회의 전사 내용을 정리해주세요:\n\n{transcript}",
             )
-            return response.content[0].text
+            return response.text
         except Exception as e:
             last_error = e
             if attempt < MAX_RETRIES - 1:

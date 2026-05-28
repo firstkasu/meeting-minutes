@@ -8,10 +8,8 @@ import site
 
 block_cipher = None
 
-# 사이트 패키지 경로
 site_packages = site.getsitepackages()[0]
 
-# CTranslate2, ONNX Runtime 네이티브 바이너리
 binaries = []
 for pkg in ["ctranslate2", "onnxruntime"]:
     pkg_dir = os.path.join(site_packages, pkg)
@@ -21,14 +19,12 @@ for pkg in ["ctranslate2", "onnxruntime"]:
                 if f.endswith((".dll", ".so", ".pyd")):
                     binaries.append((os.path.join(root, f), os.path.relpath(root, site_packages)))
 
-# soundcard DLL
 sc_dir = os.path.join(site_packages, "soundcard")
 if os.path.isdir(sc_dir):
     for f in os.listdir(sc_dir):
         if f.endswith((".dll", ".pyd")):
             binaries.append((os.path.join(sc_dir, f), "soundcard"))
 
-# faster-whisper medium 모델 동봉
 datas = []
 model_dir = os.path.join(os.path.dirname(os.path.abspath(SPECPATH)), "whisper-medium")
 if os.path.isdir(model_dir):
@@ -48,7 +44,8 @@ a = Analysis(
         "ctranslate2",
         "faster_whisper",
         "onnxruntime",
-        "anthropic",
+        "google.genai",
+        "google.generativeai",
         "dotenv",
         "streamlit",
         "streamlit_autorefresh",

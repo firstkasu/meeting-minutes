@@ -181,10 +181,6 @@ def transcribe(audio_path: str) -> str:
     """faster-whisper로 한국어 전사."""
     from faster_whisper import WhisperModel
 
-    model_path = get_model_path()
-    if not os.path.isdir(model_path):
-        model_path = "medium"
-
     try:
         import torch
         device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -192,6 +188,11 @@ def transcribe(audio_path: str) -> str:
         device = "cpu"
     compute_type = "float16" if device == "cuda" else "int8"
 
-    model = WhisperModel(model_path, device=device, compute_type=compute_type)
+    model_dir = get_model_path()
+    if os.path.isdir(model_dir):
+        model = WhisperModel("medium", device=device, compute_type=compute_type, download_root=model_dir)
+    else:
+        model = WhisperModel("medium", device=device, compute_type=compute_type)
+
     segments, _ = model.transcribe(audio_path, language="ko")
     return " ".join(seg.text.strip() for seg in segments)

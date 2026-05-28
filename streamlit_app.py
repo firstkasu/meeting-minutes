@@ -1,7 +1,6 @@
 """회의 녹음·전사·회의록 생성 Streamlit 앱."""
 
 import os
-import time
 from datetime import datetime
 
 import streamlit as st
@@ -14,9 +13,8 @@ from utils import (
     transcribe,
     format_duration,
     assemble_minutes,
-    generate_meeting_filename,
 )
-from claude_prompt import generate_minutes
+from llm_prompt import generate_minutes
 
 load_dotenv()
 
@@ -45,9 +43,9 @@ with col1:
         disabled=st.session_state.recording or st.session_state.processing,
         use_container_width=True,
     ):
-        api_key = os.getenv("ANTHROPIC_API_KEY")
+        api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
-            st.session_state.error = "ANTHROPIC_API_KEY가 .env에 설정되지 않았습니다."
+            st.session_state.error = "GEMINI_API_KEY가 .env에 설정되지 않았습니다."
         else:
             st.session_state.error = None
             st.session_state.result = None
@@ -103,7 +101,7 @@ if st.session_state.processing and st.session_state.rec_state:
     with open(txt_path, "w", encoding="utf-8") as f:
         f.write(transcript)
 
-    api_key = os.getenv("ANTHROPIC_API_KEY")
+    api_key = os.getenv("GEMINI_API_KEY")
     with st.spinner("회의록 생성 중..."):
         try:
             body = generate_minutes(transcript, api_key)
@@ -132,7 +130,7 @@ if st.session_state.processing and st.session_state.rec_state:
 
 if st.session_state.result:
     r = st.session_state.result
-    st.success(f"회의록 생성 완료!")
+    st.success("회의록 생성 완료!")
     st.markdown(r["body"])
     st.markdown(f"## 전체 회의 시간\n- {format_duration(r['duration'])}")
 

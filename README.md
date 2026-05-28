@@ -3,7 +3,7 @@
 Windows 11에서 동작하는 로컬 회의 녹음·전사·회의록 자동 생성 도구.
 
 - **회의 시작** → 마이크 + 시스템 오디오(WASAPI loopback) 동시 녹음
-- **회의 종료** → faster-whisper 전사 → Claude API 회의록 생성
+- **회의 종료** → faster-whisper 전사 → Gemini API 회의록 생성
 
 ## 실행 방법
 
@@ -23,10 +23,15 @@ pip install -r requirements.txt
 
 ### 2. API 키 설정
 
-`.env.example`을 `.env`로 복사 후 Anthropic API 키 입력:
+**Gemini API 키 발급:**
+1. [Google AI Studio](https://aistudio.google.com/) 접속
+2. 좌측 메뉴 "Get API Key" 클릭
+3. "Create API key" → 키 복사
+
+`.env.example`을 `.env`로 복사 후 키 입력:
 
 ```
-ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxxxxxxxxx
+GEMINI_API_KEY=your-gemini-api-key-here
 ```
 
 ### 3. faster-whisper 모델 준비
@@ -34,11 +39,10 @@ ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxxxxxxxxx
 medium 모델을 프로젝트 루트의 `whisper-medium/` 폴더에 배치:
 
 ```bash
-# 자동 다운로드 (최초 1회, 인터넷 필요)
-python -c "from faster_whisper import WhisperModel; WhisperModel('medium', device='cpu', compute_type='int8')"
+python -c "from faster_whisper import WhisperModel; WhisperModel('medium', device='cpu', compute_type='int8', download_root='whisper-medium')"
 ```
 
-다운로드된 모델을 `whisper-medium/`으로 복사하면 오프라인 사용 가능.
+다운로드 후 `whisper-medium/` 폴더가 생성되면 오프라인 사용 가능.
 
 ### 4. 앱 실행
 
@@ -47,6 +51,13 @@ streamlit run streamlit_app.py
 ```
 
 브라우저에서 `http://localhost:8501` 자동 열림.
+
+## LLM 교체
+
+`llm_prompt.py`의 `generate_minutes()` 함수만 교체하면 다른 LLM 사용 가능:
+- 현재: Google Gemini (`gemini-2.5-flash`)
+- 모델 변경: `MODEL` 상수 수정
+- 다른 제공자: `generate_minutes()` 내부 클라이언트 교체
 
 ## WASAPI Loopback 원리 및 제약
 
@@ -120,7 +131,7 @@ pyinstaller build.spec
 ```
 ├── streamlit_app.py       # Streamlit 메인 앱
 ├── utils.py               # 녹음·믹싱·전사 유틸리티
-├── claude_prompt.py       # Anthropic API 호출·프롬프트
+├── llm_prompt.py          # LLM 호출·프롬프트 (Gemini)
 ├── .env.example           # API 키 템플릿
 ├── build.spec             # PyInstaller 빌드 설정
 ├── requirements.txt       # Python 의존성
@@ -131,5 +142,5 @@ pyinstaller build.spec
 │   ├── test_assembly.py
 │   └── test_api_retry.py
 ├── recordings/            # 녹음 파일 (자동 생성)
-└── whisper-medium/        # faster-whisper 모델 (수동 배치)
+└── whisper-medium/        # faster-whisper 모델
 ```
