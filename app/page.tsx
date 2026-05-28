@@ -249,7 +249,19 @@ export default function Home() {
         body: formData,
       });
 
-      const data = await res.json();
+      const rawText = await res.text();
+      let data: { minutes?: string; transcript?: string; error?: string } = {};
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        if (res.status === 504 || res.status === 408) {
+          throw new Error(`서버 처리 시간 초과 (${res.status}). 녹음 길이를 줄이거나 잠시 후 다시 시도해주세요.`);
+        }
+        if (res.status >= 500) {
+          throw new Error(`서버 오류 (${res.status}). Vercel 함수가 timeout되었거나 크래시되었습니다. 짧은 회의로 다시 시도해주세요. 응답: ${rawText.slice(0, 120)}`);
+        }
+        throw new Error(`예상치 못한 응답 (${res.status}): ${rawText.slice(0, 200)}`);
+      }
 
       if (!res.ok) {
         throw new Error(data.error || `HTTP ${res.status}`);

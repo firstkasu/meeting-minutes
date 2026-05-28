@@ -29,10 +29,10 @@ const SYSTEM_PROMPT = `당신은 회의 녹음을 분석하는 전문가입니�
 
 const MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest"];
 const BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
-const RETRY_DELAYS_MS = [1000, 3000];
+const PER_MODEL_TIMEOUT_MS = 28000;
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const isRetryable = (status: number) => status === 429 || status === 500 || status === 503 || status === 504;
+const isRetryable = (status: number) =>
+  status === 429 || status === 500 || status === 503 || status === 504;
 
 async function uploadToFileAPI(
   apiKey: string,
@@ -127,37 +127,49 @@ export async function POST(request: Request) {
     };
 
     let geminiRes: Response | null = null;
-    let lastError: { status: number; text: string; model: string } | null = null;
+    let lastError: { kind: string; detail: string; model: string } | null = null;
 
-    outer: for (const model of MODELS) {
-      for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    for (const model of MODELS) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), PER_MODEL_TIMEOUT_MS);
+      try {
         const res = await fetch(
           `${BASE_URL}/models/${model}:generateContent?key=${apiKey}`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(geminiBody),
+            signal: controller.signal,
           }
         );
 
         if (res.ok) {
           geminiRes = res;
-          break outer;
+          break;
         }
 
         const errText = await res.text();
-        lastError = { status: res.status, text: errText, model };
-        console.error(`Gemini ${model} attempt ${attempt + 1} failed:`, res.status, errText.slice(0, 200));
+        lastError = { kind: `HTTP_${res.status}`, detail: errText, model };
+        console.error(`Gemini ${model} failed:`, res.status, errText.slice(0, 200));
 
         if (!isRetryable(res.status)) break;
-        if (attempt < RETRY_DELAYS_MS.length) await sleep(RETRY_DELAYS_MS[attempt]);
+      } catch (err) {
+        const isAbort = err instanceof Error && err.name === "AbortError";
+        lastError = {
+          kind: isAbort ? "TIMEOUT" : "NETWORK",
+          detail: err instanceof Error ? err.message : String(err),
+          model,
+        };
+        console.error(`Gemini ${model} ${lastError.kind}:`, lastError.detail);
+      } finally {
+        clearTimeout(timer);
       }
     }
 
     if (!geminiRes) {
       return Response.json(
         {
-          error: `Gemini API 호출 실패 (모든 모델·재시도 실패). 마지막 오류 [${lastError?.model} ${lastError?.status}]: ${lastError?.text.slice(0, 400)}`,
+          error: `Gemini API 호출 실패. 마지막 오류 [${lastError?.model} / ${lastError?.kind}]: ${lastError?.detail.slice(0, 300)}`,
         },
         { status: 503 }
       );
