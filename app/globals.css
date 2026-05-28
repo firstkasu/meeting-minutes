@@ -2,8 +2,6 @@
 html, body { margin: 0; padding: 0; }
 
 :root {
-  --bg-grad-1: #667eea;
-  --bg-grad-2: #764ba2;
   --surface: #ffffff;
   --surface-soft: #f8fafc;
   --border: #e5e7eb;
@@ -21,8 +19,7 @@ body {
   font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
     system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo",
     "Noto Sans KR", "Malgun Gothic", sans-serif;
-  background: linear-gradient(135deg, var(--bg-grad-1) 0%, var(--bg-grad-2) 100%);
-  background-attachment: fixed;
+  background: #ffffff;
   color: var(--text-main);
   min-height: 100vh;
   font-feature-settings: "ss10";
@@ -39,29 +36,32 @@ body {
 
 .hero {
   text-align: center;
-  margin-bottom: 36px;
-  color: white;
+  margin-bottom: 32px;
+  color: var(--text-main);
 }
 .hero h1 {
-  font-size: 40px;
+  font-size: 36px;
   font-weight: 800;
-  margin: 0 0 10px;
+  margin: 0 0 8px;
   letter-spacing: -0.03em;
-  text-shadow: 0 2px 16px rgba(0,0,0,0.15);
+  background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 .hero p {
-  font-size: 16px;
-  opacity: 0.92;
+  font-size: 15px;
+  color: var(--text-soft);
   margin: 0;
   font-weight: 400;
 }
 
 .card {
   background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 20px;
   padding: 28px;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
-  backdrop-filter: blur(12px);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
 .info {
@@ -103,6 +103,14 @@ body {
   padding-left: 22px;
 }
 .notice li, .tools li { margin: 4px 0; }
+.notice a {
+  color: #b45309;
+  font-weight: 600;
+  text-decoration: underline;
+}
+.notice a:hover {
+  color: #92400e;
+}
 
 .tools {
   background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
@@ -297,7 +305,8 @@ body {
   background: var(--surface);
   padding: 28px;
   border-radius: 20px;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   margin-top: 20px;
 }
 .success {
