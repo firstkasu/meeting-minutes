@@ -67,6 +67,7 @@ export default function Home() {
   const [systemLevel, setSystemLevel] = useState(0);
   const [captureSystemAudio, setCaptureSystemAudio] = useState(true);
   const [systemStatus, setSystemStatus] = useState<"off" | "ok" | "cancelled" | "no_audio">("off");
+  const [systemSilent, setSystemSilent] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -77,6 +78,8 @@ export default function Home() {
   const analyserMicRef = useRef<AnalyserNode | null>(null);
   const analyserSysRef = useRef<AnalyserNode | null>(null);
   const meterRafRef = useRef<number | null>(null);
+  const systemSilentSinceRef = useRef<number | null>(null);
+  const systemSilentFlagRef = useRef(false);
 
   const cleanup = useCallback(() => {
     if (timerRef.current) {
@@ -102,6 +105,9 @@ export default function Home() {
     setMicLevel(0);
     setSystemLevel(0);
     setSystemStatus("off");
+    setSystemSilent(false);
+    systemSilentSinceRef.current = null;
+    systemSilentFlagRef.current = false;
   }, []);
 
   const computeLevel = (analyser: AnalyserNode): number => {
@@ -186,9 +192,32 @@ export default function Home() {
         setSystemActive(true);
       }
 
+      const SILENCE_THRESHOLD = 0.02;
+      const SILENCE_DEBOUNCE_MS = 2000;
       const tickMeter = () => {
         if (analyserMicRef.current) setMicLevel(computeLevel(analyserMicRef.current));
-        if (analyserSysRef.current) setSystemLevel(computeLevel(analyserSysRef.current));
+        if (analyserSysRef.current) {
+          const lvl = computeLevel(analyserSysRef.current);
+          setSystemLevel(lvl);
+          const now = performance.now();
+          if (lvl >= SILENCE_THRESHOLD) {
+            systemSilentSinceRef.current = null;
+            if (systemSilentFlagRef.current) {
+              systemSilentFlagRef.current = false;
+              setSystemSilent(false);
+            }
+          } else {
+            if (systemSilentSinceRef.current === null) {
+              systemSilentSinceRef.current = now;
+            } else if (
+              !systemSilentFlagRef.current &&
+              now - systemSilentSinceRef.current >= SILENCE_DEBOUNCE_MS
+            ) {
+              systemSilentFlagRef.current = true;
+              setSystemSilent(true);
+            }
+          }
+        }
         meterRafRef.current = requestAnimationFrame(tickMeter);
       };
       meterRafRef.current = requestAnimationFrame(tickMeter);
@@ -425,9 +454,9 @@ export default function Home() {
                 ⚠️ 화면은 공유되었지만 <strong>&quot;시스템 오디오도 공유&quot; 토글이 꺼져 있어</strong> 시스템 오디오가 캡처되지 않았습니다. 종료 후 다시 시작하면서 다이얼로그 하단의 토글을 켜주세요. (지금은 마이크만 녹음 중)
               </div>
             )}
-            {systemActive && systemLevel < 0.02 && elapsed > 3 && (
+            {systemActive && systemSilent && elapsed > 3 && (
               <div className="meter-info">
-                ℹ️ 시스템 오디오 트랙은 연결되었지만 소리가 감지되지 않습니다. 공유한 화면에서 실제로 소리가 재생 중인지 확인해주세요.
+                ℹ️ 시스템 오디오 트랙은 연결되었지만 2초 이상 소리가 감지되지 않습니다. 공유한 화면에서 실제로 소리가 재생 중인지 확인해주세요.
               </div>
             )}
           </div>
