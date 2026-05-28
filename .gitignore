@@ -1,10 +1,16 @@
 __pycache__/
 *.pyc
 .env
+.env.local
 recordings/
 dist/
 build/
 *.egg-info/
 .pytest_cache/
 venv/
+.venv/
 whisper-medium/
+node_modules/
+.next/
+out/
+next-env.d.ts

@@ -1,146 +1,92 @@
 # 회의 녹음 & 정리 시스템
 
-Windows 11에서 동작하는 로컬 회의 녹음·전사·회의록 자동 생성 도구.
+회의를 녹음하면 자동으로 전사하고 구조화된 회의록을 만들어주는 도구.
+**로컬 Python (Streamlit)** 버전과 **웹 (Next.js + Vercel)** 버전 두 가지가 같은 저장소에 있습니다.
 
-- **회의 시작** → 마이크 + 시스템 오디오(WASAPI loopback) 동시 녹음
-- **회의 종료** → faster-whisper 전사 → Gemini API 회의록 생성
+## 🌐 웹 버전 (Vercel 배포)
 
-## 실행 방법
+브라우저에서 녹음 → Gemini API로 전사 + 회의록 생성.
 
-### 1. 환경 설정
+### Vercel 배포 방법
+
+1. [vercel.com](https://vercel.com)에서 이 저장소를 import
+2. **Framework Preset**: Next.js (자동 감지)
+3. **Environment Variables** 에 `GEMINI_API_KEY` 추가
+   - [Google AI Studio](https://aistudio.google.com/apikey)에서 발급
+4. Deploy 클릭
+
+### 로컬 개발
 
 ```bash
-# uv 사용 시
+npm install
+echo "GEMINI_API_KEY=your-key-here" > .env.local
+npm run dev
+# http://localhost:3000
+```
+
+### 사용법
+
+1. **회의 시작** 클릭 → 마이크 권한 허용
+2. 화면 공유 다이얼로그가 뜨면 회의 탭(Zoom/Meet 등)을 선택하고 **"탭 오디오 공유"** 체크 → 시스템 오디오도 함께 녹음됨 (거부하면 마이크만 녹음)
+3. **회의 종료** 클릭 → Gemini가 전사 + 회의록 생성
+4. 결과 확인 후 다운로드 가능
+
+### 제약
+
+- Vercel Hobby 플랜: 함수 timeout 10초 → 5분 이상 오디오 처리 어려움. Pro 플랜(60초) 권장
+- 요청 body 크기: 4.5MB → WebM Opus 64kbps로 약 5분 가능
+- 시스템 오디오 캡처는 Chrome/Edge에서 탭 공유 + 탭 오디오 옵션 사용
+
+## 🖥️ 로컬 Python 버전 (Streamlit)
+
+Windows에서 WASAPI loopback으로 시스템 오디오 + 마이크를 직접 캡처. 오프라인 동작 가능.
+
+### 설치 & 실행
+
+```bash
 uv venv --python 3.11 .venv
 .venv\Scripts\activate
 uv pip install -r requirements.txt
 
-# 또는 pip 사용 시
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-```
-
-### 2. API 키 설정
-
-**Gemini API 키 발급:**
-1. [Google AI Studio](https://aistudio.google.com/) 접속
-2. 좌측 메뉴 "Get API Key" 클릭
-3. "Create API key" → 키 복사
-
-`.env.example`을 `.env`로 복사 후 키 입력:
-
-```
-GEMINI_API_KEY=your-gemini-api-key-here
-```
-
-### 3. faster-whisper 모델 준비
-
-medium 모델을 프로젝트 루트의 `whisper-medium/` 폴더에 배치:
-
-```bash
+# whisper medium 모델 다운로드
 python -c "from faster_whisper import WhisperModel; WhisperModel('medium', device='cpu', compute_type='int8', download_root='whisper-medium')"
-```
 
-다운로드 후 `whisper-medium/` 폴더가 생성되면 오프라인 사용 가능.
+# .env에 GEMINI_API_KEY 설정
+echo GEMINI_API_KEY=your-key-here > .env
 
-### 4. 앱 실행
-
-```bash
 streamlit run streamlit_app.py
 ```
 
-브라우저에서 `http://localhost:8501` 자동 열림.
-
-## LLM 교체
-
-`llm_prompt.py`의 `generate_minutes()` 함수만 교체하면 다른 LLM 사용 가능:
-- 현재: Google Gemini (`gemini-2.5-flash`)
-- 모델 변경: `MODEL` 상수 수정
-- 다른 제공자: `generate_minutes()` 내부 클라이언트 교체
-
-## WASAPI Loopback 원리 및 제약
-
-- Windows WASAPI loopback을 사용하여 **스피커 출력을 캡처**합니다.
-- 별도 드라이버(VB-Cable 등) 설치 불필요.
-- 화상회의(Zoom/Meet/Teams)에서 상대방 목소리 + 내 목소리 모두 녹음됩니다.
-
-### 알려진 제약
-
-- **블루투스 이어폰/헤드셋**: loopback 캡처가 누락될 수 있습니다. 유선 스피커/이어폰 권장.
-- **배타적 모드**: 일부 앱이 오디오 장치를 배타적으로 점유하면 캡처 실패 가능.
-
-## PyInstaller 빌드 (--onedir)
+### 테스트
 
 ```bash
-pip install pyinstaller
-pyinstaller build.spec
+.venv\Scripts\python.exe -m pytest tests/ -v
 ```
 
-빌드 결과: `dist/MeetingRecorder/` 폴더.
-
-### 빌드 전 확인
-
-- `whisper-medium/` 폴더에 모델 파일이 있어야 번들에 포함됩니다.
-- CTranslate2, ONNX Runtime DLL이 자동 수집됩니다.
-
-### 클린 환경 실행 검증
-
-1. Python이 설치되지 않은 다른 PC (또는 venv 비활성 상태)에서 테스트
-2. `dist/MeetingRecorder/MeetingRecorder.exe` 실행
-3. 브라우저가 자동으로 열리며 앱 동작 확인
-
-### SmartScreen 경고
-
-코드 서명이 없으므로 Windows SmartScreen에서 "알 수 없는 앱" 경고가 뜹니다.
-"추가 정보" → "실행"을 클릭하면 정상 실행됩니다.
-
-## 수동 검증 체크리스트
-
-### 녹음 (loopback + 마이크)
-
-- [ ] 스피커에서 소리 재생 중 녹음 → WAV에 스피커 소리 포함
-- [ ] 마이크에 말하며 녹음 → WAV에 내 목소리 포함
-- [ ] 동시 녹음 → 두 소리 모두 포함
-- [ ] 블루투스 헤드셋 → loopback 누락 가능 확인
-
-### 전사 (faster-whisper)
-
-- [ ] 한국어 음성 → 한국어 텍스트로 전사
-- [ ] medium 모델 로드 성공 (GPU/CPU 자동 감지)
-- [ ] 전사 텍스트 `.txt`로 저장 확인
-
-### Streamlit UI
-
-- [ ] "회의 시작" 클릭 → "녹음 중..." + 경과시간 표시
-- [ ] "회의 종료" 클릭 → 전사 → 회의록 생성 → 결과 표시
-- [ ] 경과시간 1초마다 갱신
-- [ ] 녹음 중 "회의 시작" 비활성화
-- [ ] 결과에 회의록 본문 + 전체 회의 시간 표시
-- [ ] "전체 녹음 내용 (상세)" expander로 접힘
-
-### PyInstaller 패키징
-
-- [ ] `pyinstaller build.spec` 빌드 성공
-- [ ] Python 미설치 환경에서 exe 실행 성공
-- [ ] Streamlit 서버 기동 + 브라우저 열림
-- [ ] 녹음·전사·회의록 생성 정상 동작
-
-## 파일 구조
+### 파일 구조
 
 ```
-├── streamlit_app.py       # Streamlit 메인 앱
-├── utils.py               # 녹음·믹싱·전사 유틸리티
-├── llm_prompt.py          # LLM 호출·프롬프트 (Gemini)
-├── .env.example           # API 키 템플릿
-├── build.spec             # PyInstaller 빌드 설정
-├── requirements.txt       # Python 의존성
-├── test_loopback_manual.py # loopback 수동 테스트
-├── tests/                 # pytest 테스트
-│   ├── test_audio_mixing.py
-│   ├── test_paths.py
-│   ├── test_assembly.py
-│   └── test_api_retry.py
-├── recordings/            # 녹음 파일 (자동 생성)
-└── whisper-medium/        # faster-whisper 모델
+# 웹 버전 (Vercel)
+├── app/                   # Next.js App Router
+│   ├── page.tsx          # 녹음 UI
+│   ├── layout.tsx
+│   ├── globals.css
+│   └── api/process/route.ts  # Gemini API 호출
+├── package.json
+├── tsconfig.json
+├── next.config.ts
+├── vercel.json
+
+# 로컬 버전 (Streamlit)
+├── streamlit_app.py
+├── utils.py               # 녹음·믹싱·전사
+├── llm_prompt.py          # Gemini 호출
+├── requirements.txt
+├── build.spec             # PyInstaller --onedir
+├── tests/                 # pytest (31개)
+└── whisper-medium/        # faster-whisper 모델 (gitignore)
 ```
+
+## API 키
+
+[Google AI Studio](https://aistudio.google.com/apikey)에서 무료로 발급.
