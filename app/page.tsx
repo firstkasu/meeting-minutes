@@ -314,10 +314,19 @@ export default function Home() {
 
       <section className="card">
       <div className="test-link">
-        🎬 테스트용 영상:{" "}
-        <a href="https://www.youtube.com/shorts/gF1x6fjTx2w" target="_blank" rel="noopener noreferrer">
-          YouTube Shorts (gF1x6fjTx2w)
-        </a>
+        🎬 테스트용 영상:
+        <ul>
+          <li>
+            <a href="https://www.youtube.com/shorts/r1A7klnkxwY" target="_blank" rel="noopener noreferrer">
+              YouTube Shorts (r1A7klnkxwY)
+            </a>
+          </li>
+          <li>
+            <a href="https://www.youtube.com/shorts/gF1x6fjTx2w" target="_blank" rel="noopener noreferrer">
+              YouTube Shorts (gF1x6fjTx2w)
+            </a>
+          </li>
+        </ul>
       </div>
 
       <div className="info">

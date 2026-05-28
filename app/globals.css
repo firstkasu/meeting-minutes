@@ -74,6 +74,13 @@ body {
   margin-bottom: 14px;
   color: #065f46;
 }
+.test-link ul {
+  margin: 6px 0 0;
+  padding-left: 22px;
+}
+.test-link li {
+  margin: 2px 0;
+}
 .test-link a {
   color: #047857;
   font-weight: 700;
