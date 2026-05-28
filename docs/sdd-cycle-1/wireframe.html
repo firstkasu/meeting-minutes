@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <title>Wireframe · 회의 녹음 & 정리</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Pretendard Variable", sans-serif;
+      background: #fff;
+      color: #1e293b;
+      letter-spacing: -0.01em;
+    }
+    .container { max-width: 820px; margin: 0 auto; padding: 56px 24px 80px; }
+
+    .hero { text-align: center; margin-bottom: 32px; }
+    .hero h1 {
+      font-size: 36px; font-weight: 800; margin: 0 0 8px;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .hero p { color: #64748b; margin: 0; }
+
+    .card {
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 20px;
+      padding: 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .test-link {
+      background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+      border-left: 4px solid #10b981;
+      padding: 12px 18px; border-radius: 12px;
+      font-size: 14px; color: #065f46; margin-bottom: 14px;
+    }
+    .test-link ul { margin: 6px 0 0; padding-left: 22px; }
+    .test-link a { color: #047857; font-weight: 700; }
+
+    .info {
+      background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+      border-left: 4px solid #6366f1;
+      padding: 16px 20px; border-radius: 12px;
+      font-size: 14px; color: #312e81; margin-bottom: 14px; line-height: 1.6;
+    }
+    .info ol { margin: 10px 0 6px; padding-left: 22px; }
+
+    .notice {
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      border-left: 4px solid #f59e0b;
+      padding: 14px 20px; border-radius: 12px;
+      font-size: 13.5px; color: #78350f; margin-bottom: 14px;
+    }
+    .notice ul { margin: 8px 0 0; padding-left: 22px; }
+
+    .tools {
+      background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+      border-left: 4px solid #64748b;
+      padding: 14px 20px; border-radius: 12px;
+      font-size: 13.5px; color: #334155; margin-bottom: 24px;
+    }
+    .tools ul { margin: 8px 0 0; padding-left: 22px; }
+
+    .toggle-row {
+      display: flex; align-items: flex-start; gap: 10px;
+      background: #f8fafc; border: 1px solid #e5e7eb;
+      border-radius: 12px; padding: 12px 16px; margin-bottom: 14px;
+      font-size: 14px;
+    }
+    .toggle-row input { margin-top: 2px; }
+    .toggle-row small { display: block; color: #64748b; }
+
+    .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+    .btn { padding: 16px 24px; font-size: 16px; font-weight: 700; border: none; border-radius: 14px; color: white; }
+    .btn-start { background: linear-gradient(135deg, #6366f1, #4f46e5); box-shadow: 0 6px 18px rgba(99,102,241,0.35); }
+    .btn-stop { background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: 0 6px 18px rgba(239,68,68,0.35); }
+    .btn-download { background: linear-gradient(135deg, #10b981, #059669); margin-top: 18px; }
+
+    .status {
+      padding: 18px 22px; border-radius: 14px; font-size: 17px; font-weight: 600;
+      margin-bottom: 14px;
+    }
+    .status.recording { background: linear-gradient(135deg, #fee2e2, #fecaca); color: #dc2626; }
+    .status.processing { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; }
+
+    .meters {
+      background: #f8fafc; border: 1px solid #e5e7eb;
+      border-radius: 14px; padding: 16px 20px; margin-bottom: 16px;
+    }
+    .meter-row { display: flex; align-items: center; gap: 14px; margin: 8px 0; font-size: 14px; }
+    .meter-label { min-width: 140px; font-weight: 600; }
+    .meter-bar { flex: 1; height: 10px; background: #e5e7eb; border-radius: 999px; overflow: hidden; }
+    .meter-fill { height: 100%; background: linear-gradient(90deg, #10b981 0%, #f59e0b 70%, #ef4444 100%); border-radius: 999px; }
+    .meter-info {
+      margin-top: 10px; padding: 10px 12px;
+      background: #f0f9ff; border: 1px solid #bae6fd;
+      border-radius: 8px; font-size: 13px; color: #075985;
+    }
+
+    .result {
+      background: #fff; padding: 28px; border-radius: 20px;
+      border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      margin-top: 20px;
+    }
+    .success {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+      color: #065f46; padding: 10px 16px; border-radius: 999px;
+      font-weight: 700; font-size: 14px; margin-bottom: 20px;
+    }
+    .minutes-content {
+      background: #f8fafc; padding: 24px 28px; border-radius: 14px;
+      border: 1px solid #e5e7eb; line-height: 1.75;
+    }
+    .minutes-content h1 { border-bottom: 2px solid #6366f1; padding-bottom: 12px; }
+    .minutes-content h2 { color: #6366f1; }
+    .transcript-details {
+      margin-top: 20px; border: 1px solid #e5e7eb; border-radius: 14px;
+      padding: 14px 18px; background: #f8fafc;
+    }
+
+    code {
+      background: #1e293b; color: #f8fafc; padding: 3px 10px; border-radius: 8px;
+      font-family: "Consolas", monospace;
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header class="hero">
+      <h1>🎙️ AI 회의 녹음 & 정리</h1>
+      <p>버튼 한 번으로 회의를 녹음하고 자동으로 회의록을 만들어 드려요</p>
+    </header>
+
+    <section class="card">
+      <!-- 1. 테스트용 영상 -->
+      <div class="test-link">
+        🎬 테스트용 영상:
+        <ul>
+          <li><a>YouTube Shorts (r1A7klnkxwY)</a></li>
+          <li><a>YouTube Shorts (gF1x6fjTx2w)</a></li>
+        </ul>
+      </div>
+
+      <!-- 2. 사용 방법 -->
+      <div class="info">
+        <strong>📌 사용 방법:</strong>
+        <ol>
+          <li>아래 <strong>"시스템 오디오도 녹음"</strong> 체크 여부 선택</li>
+          <li>"회의 시작" 클릭 → 마이크 권한 허용</li>
+          <li>(체크한 경우) 화면 공유 다이얼로그에서 <strong>"공유"</strong> 클릭. 취소해도 마이크 녹음은 계속됨.</li>
+          <li>회의가 끝나면 "회의 종료" 클릭</li>
+        </ol>
+      </div>
+
+      <!-- 3. 테스트 버전 안내 -->
+      <div class="notice">
+        <strong>⚠️ 테스트 버전 안내</strong>
+        <ul>
+          <li>이 버전은 <strong>1분 미만의 회의만</strong> 처리 가능합니다 (서버 제약).</li>
+          <li>가볍게 만들기 위해 <strong>최고 성능의 전사 도구는 사용하지 않았습니다.</strong></li>
+        </ul>
+      </div>
+
+      <!-- 4. 기술 스택 -->
+      <div class="tools">
+        <strong>사용된 기술 스택</strong>
+        <ul>
+          <li>녹음: MediaRecorder API, Web Audio API</li>
+          <li>전사 + 회의록: Google Gemini 2.5 Flash</li>
+          <li>프론트엔드: Next.js 15 + React 19 + TypeScript</li>
+          <li>배포: Vercel Serverless</li>
+        </ul>
+      </div>
+
+      <!-- 5. 토글 -->
+      <label class="toggle-row">
+        <input type="checkbox" checked />
+        <span>
+          <strong>시스템 오디오(스피커 소리)도 녹음</strong>
+          <small>· 시작 시 화면 공유 다이얼로그가 1회 뜸</small>
+        </span>
+      </label>
+
+      <!-- 6. 버튼 두 개 -->
+      <div class="buttons">
+        <button class="btn btn-start">🎙️ 회의 시작</button>
+        <button class="btn btn-stop">⏹️ 회의 종료</button>
+      </div>
+
+      <!-- 7. 녹음 중 상태 -->
+      <div class="status recording">🔴 녹음 중... <code>0분 23초</code></div>
+
+      <!-- 8. 레벨 미터 -->
+      <div class="meters">
+        <div class="meter-row">
+          <span class="meter-label">마이크 ✅</span>
+          <div class="meter-bar"><div class="meter-fill" style="width:42%"></div></div>
+        </div>
+        <div class="meter-row">
+          <span class="meter-label">시스템 오디오 ✅</span>
+          <div class="meter-bar"><div class="meter-fill" style="width:68%"></div></div>
+        </div>
+        <div class="meter-info">
+          ℹ️ 시스템 오디오 트랙은 연결되었지만 2초 이상 소리가 감지되지 않습니다.
+        </div>
+      </div>
+
+      <!-- 9. 처리 중 -->
+      <div class="status processing">⏳ 처리 중... (Gemini가 전사 + 회의록 생성)</div>
+    </section>
+
+    <!-- 10. 결과 -->
+    <section class="result">
+      <div class="success">✅ 회의록 생성 완료</div>
+      <div class="minutes-content">
+        <h1>제품 출시 일정 점검 회의</h1>
+        <h2>논의 내용</h2>
+        <ul>
+          <li>QA 단계 일정이 이틀 지연됨</li>
+          <li>마케팅 자산은 준비 완료</li>
+        </ul>
+        <h2>액션 아이템</h2>
+        <ul>
+          <li><strong>담당자</strong>: 홍길동 - 회귀 테스트 케이스 추가 (기한: ~2025-12-05)</li>
+        </ul>
+        <h2>추후 계획</h2>
+        <ul>
+          <li>단기: 12/8 베타 릴리스</li>
+          <li>중장기: 1월 중 정식 출시</li>
+        </ul>
+      </div>
+      <h2>전체 회의 시간</h2>
+      <p>0분 47초</p>
+      <details class="transcript-details">
+        <summary>전체 녹음 내용 (상세)</summary>
+        <p>안녕하세요, 오늘 회의를 시작하겠습니다 ...</p>
+      </details>
+      <button class="btn btn-download">📥 회의록 다운로드 (.md)</button>
+    </section>
+  </main>
+</body>
+</html>
