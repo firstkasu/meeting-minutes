@@ -65,6 +65,7 @@ export default function Home() {
   const [systemActive, setSystemActive] = useState(false);
   const [micLevel, setMicLevel] = useState(0);
   const [systemLevel, setSystemLevel] = useState(0);
+  const [captureSystemAudio, setCaptureSystemAudio] = useState(true);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -122,28 +123,30 @@ export default function Home() {
       streamsRef.current.push(micStream);
 
       let systemStream: MediaStream | null = null;
-      try {
-        const displayStream = await navigator.mediaDevices.getDisplayMedia({
-          video: {
-            displaySurface: "monitor",
-          } as MediaTrackConstraints,
-          audio: {
-            echoCancellation: false,
-            noiseSuppression: false,
-            autoGainControl: false,
-          },
-          // @ts-expect-error - systemAudio is a Chrome-specific option
-          systemAudio: "include",
-          selfBrowserSurface: "include",
-          surfaceSwitching: "exclude",
-        });
-        streamsRef.current.push(displayStream);
-        const audioTracks = displayStream.getAudioTracks();
-        if (audioTracks.length > 0) {
-          systemStream = new MediaStream(audioTracks);
+      if (captureSystemAudio) {
+        try {
+          const displayStream = await navigator.mediaDevices.getDisplayMedia({
+            video: {
+              displaySurface: "monitor",
+            } as MediaTrackConstraints,
+            audio: {
+              echoCancellation: false,
+              noiseSuppression: false,
+              autoGainControl: false,
+            },
+            // @ts-expect-error - systemAudio is a Chrome-specific option
+            systemAudio: "include",
+            selfBrowserSurface: "include",
+            surfaceSwitching: "exclude",
+          });
+          streamsRef.current.push(displayStream);
+          const audioTracks = displayStream.getAudioTracks();
+          if (audioTracks.length > 0) {
+            systemStream = new MediaStream(audioTracks);
+          }
+        } catch {
+          // 사용자가 화면 공유를 거부/취소함 → 마이크만으로 계속 진행
         }
-      } catch {
-        // 사용자가 화면 공유를 거부함 → 마이크만 녹음
       }
 
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
@@ -293,11 +296,12 @@ export default function Home() {
       <div className="info">
         <strong>📌 사용 방법:</strong>
         <ol>
+          <li>아래 <strong>&quot;시스템 오디오도 녹음&quot;</strong> 체크 여부 선택</li>
           <li>&quot;회의 시작&quot; 클릭 → 마이크 권한 허용</li>
-          <li>화면 공유 다이얼로그가 뜨면 <strong>&quot;전체 화면&quot;</strong>이 자동 선택됨 → <strong>&quot;공유&quot; 클릭</strong> (시스템 오디오 자동 포함)</li>
-          <li>회의 종료 후 &quot;회의 종료&quot; 클릭</li>
+          <li>(체크한 경우) 화면 공유 다이얼로그에서 <strong>&quot;공유&quot;</strong> 클릭 → 시스템 오디오 자동 포함. 취소해도 마이크 녹음은 계속됨.</li>
+          <li>회의가 끝나면 &quot;회의 종료&quot; 클릭</li>
         </ol>
-        <small>※ 브라우저 보안 정책상 시스템 오디오 캡처에는 화면 공유 다이얼로그 1회 클릭이 필수입니다 (없앨 수 없음). Chrome/Edge 권장.</small>
+        <small>※ 브라우저 보안상 시스템 오디오 캡처에는 다이얼로그 1회 클릭이 필수입니다 (모든 브라우저 공통, 우회 불가). 마이크만 녹음하면 다이얼로그 없음.</small>
       </div>
 
       <div className="notice">
@@ -317,6 +321,19 @@ export default function Home() {
           <li><strong>배포:</strong> Vercel (Serverless Functions, 60초 timeout)</li>
         </ul>
       </div>
+
+      <label className="toggle-row">
+        <input
+          type="checkbox"
+          checked={captureSystemAudio}
+          disabled={recording || processing}
+          onChange={(e) => setCaptureSystemAudio(e.target.checked)}
+        />
+        <span>
+          <strong>시스템 오디오(스피커 소리)도 녹음</strong>
+          <small>{captureSystemAudio ? " · 시작 시 화면 공유 다이얼로그가 1회 뜸" : " · 마이크만 녹음 (다이얼로그 없음)"}</small>
+        </span>
+      </label>
 
       <div className="buttons">
         <button
@@ -357,14 +374,19 @@ export default function Home() {
                 <div className="meter-fill" style={{ width: `${systemLevel * 100}%` }} />
               </div>
             </div>
-            {!systemActive && (
-              <div className="meter-warn">
-                ⚠️ 시스템 오디오가 캡처되지 않았습니다. 다시 시작 시 화면 공유 다이얼로그에서 <strong>&quot;탭 오디오 공유&quot;</strong> 또는 <strong>&quot;시스템 오디오 공유&quot;</strong> 체크박스를 켜주세요.
+            {!systemActive && captureSystemAudio && (
+              <div className="meter-info">
+                ℹ️ 화면 공유를 취소하셔서 <strong>마이크만 녹음 중</strong>입니다. 그대로 진행하셔도 됩니다.
               </div>
             )}
-            {systemActive && systemLevel < 0.02 && elapsed > 2 && (
-              <div className="meter-warn">
-                ⚠️ 시스템 오디오 트랙은 연결되었지만 소리가 감지되지 않습니다. 공유한 탭에서 실제로 소리가 재생 중인지 확인해주세요.
+            {!captureSystemAudio && (
+              <div className="meter-info">
+                ℹ️ 마이크만 녹음 모드입니다.
+              </div>
+            )}
+            {systemActive && systemLevel < 0.02 && elapsed > 3 && (
+              <div className="meter-info">
+                ℹ️ 시스템 오디오 트랙은 연결되었지만 소리가 감지되지 않습니다. 공유한 화면에서 실제로 소리가 재생 중인지 확인해주세요.
               </div>
             )}
           </div>
@@ -384,6 +406,12 @@ export default function Home() {
       {result && (
         <section className="result">
           <div className="success">✅ 회의록 생성 완료</div>
+
+          {!result.transcript.trim() && (
+            <div className="meter-info" style={{ marginBottom: 16 }}>
+              ℹ️ 전사된 내용이 없습니다. 마이크 입력이 너무 작거나 녹음에 음성이 포함되지 않았을 수 있습니다.
+            </div>
+          )}
 
           <div
             className="minutes-content"
