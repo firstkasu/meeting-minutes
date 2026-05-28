@@ -103,6 +103,11 @@ def _record_stream(
 ):
     """별도 스레드에서 마이크 + 루프백 동시 녹음."""
     try:
+        import comtypes
+        comtypes.CoInitializeEx(comtypes.COINIT_MULTITHREADED)
+    except Exception:
+        pass
+    try:
         mic_device = sc.default_microphone()
         speaker = sc.default_speaker()
         # WASAPI loopback: 블루투스 장치에서는 loopback 캡처가 누락될 수 있음
