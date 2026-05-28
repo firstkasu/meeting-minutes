@@ -27,8 +27,12 @@ const SYSTEM_PROMPT = `당신은 회의 녹음을 분석하는 전문가입니�
 
 반드시 한국어로 작성하세요. 전사 텍스트에서 파악할 수 없는 정보는 추측하지 말고 "정보 없음"으로 표기하세요.`;
 
-const MODEL = "gemini-2.5-flash";
+const MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest"];
 const BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
+const RETRY_DELAYS_MS = [1000, 3000];
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const isRetryable = (status: number) => status === 429 || status === 500 || status === 503 || status === 504;
 
 async function uploadToFileAPI(
   apiKey: string,
@@ -122,21 +126,40 @@ export async function POST(request: Request) {
       },
     };
 
-    const geminiRes = await fetch(
-      `${BASE_URL}/models/${MODEL}:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(geminiBody),
-      }
-    );
+    let geminiRes: Response | null = null;
+    let lastError: { status: number; text: string; model: string } | null = null;
 
-    if (!geminiRes.ok) {
-      const errText = await geminiRes.text();
-      console.error("Gemini API error:", geminiRes.status, errText);
+    outer: for (const model of MODELS) {
+      for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+        const res = await fetch(
+          `${BASE_URL}/models/${model}:generateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(geminiBody),
+          }
+        );
+
+        if (res.ok) {
+          geminiRes = res;
+          break outer;
+        }
+
+        const errText = await res.text();
+        lastError = { status: res.status, text: errText, model };
+        console.error(`Gemini ${model} attempt ${attempt + 1} failed:`, res.status, errText.slice(0, 200));
+
+        if (!isRetryable(res.status)) break;
+        if (attempt < RETRY_DELAYS_MS.length) await sleep(RETRY_DELAYS_MS[attempt]);
+      }
+    }
+
+    if (!geminiRes) {
       return Response.json(
-        { error: `Gemini API 오류 (${geminiRes.status}): ${errText.slice(0, 500)}` },
-        { status: 500 }
+        {
+          error: `Gemini API 호출 실패 (모든 모델·재시도 실패). 마지막 오류 [${lastError?.model} ${lastError?.status}]: ${lastError?.text.slice(0, 400)}`,
+        },
+        { status: 503 }
       );
     }
 
